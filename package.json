@@ -1,0 +1,31 @@
+{
+  "name": "mail-providers",
+  "version": "1.0.0",
+  "description": "Test some providers of emails",
+  "main": "index.js",
+  "scripts": {
+    "build": "rm -rf dist && node esbuild/mainBuild.js",
+    "build:main": "npm run build -- main",
+    "build:offline": "npm run build -- offline",
+    "debug:offline": "npm run build:offline && cross-env SLS_DEBUG=* node --inspect node_modules/serverless/bin/serverless offline -t",
+    "dev": "npm run build:offline && sls offline",
+    "deploy": "npm run build:main && sls deploy --verbose --stage dev"
+  },
+  "keywords": [
+    "git",
+    "node"
+  ],
+  "author": "charBrown95",
+  "license": "MIT",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.645.0",
+    "@aws-sdk/util-dynamodb": "^3.645.0",
+    "esbuild": "^0.23.1",
+    "googleapis": "^144.0.0"
+  },
+  "devDependencies": {
+    "serverless-dotenv-plugin": "^6.0.0",
+    "serverless-iam-roles-per-function": "^3.2.0",
+    "serverless-offline": "^13.8.0"
+  }
+}

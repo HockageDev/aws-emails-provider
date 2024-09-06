@@ -1,0 +1,124 @@
+service: emails-providers
+frameworkVersion: '3'
+
+useDotenv: true
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ${opt:region, 'us-east-1'}
+  stage: ${opt:stage, 'dev'}
+  environment:
+    REGION: ${self:provider.region}
+    STAGE: ${self:provider.stage}
+    GOOGLE_CLIENT_ID: ${env:GOOGLE_CLIENT_ID}
+    GOOGLE_CLIENT_SECRET: ${env:GOOGLE_CLIENT_SECRET}
+    GOOGLE_REDIRECT_URL: ${env:GOOGLE_REDIRECT_URL}
+    EMAIL_TABLE_NAME: email-providers
+
+plugins:
+  - serverless-dotenv-plugin
+  - serverless-iam-roles-per-function
+  - serverless-offline
+
+functions:
+  auth:
+    handler: dist/handlers/authUrlEmailHandler.handler
+    events:
+      - http:
+          path: auth/google
+          method: get
+    package:
+      patterns:
+        - dist/handlers/authUrlEmailHandler.js
+
+  callback:
+    handler: dist/handlers/callbackCodeHandler.handler
+    iamRoleStatements:
+      - Effect: 'Allow'
+        Action:
+          - dynamodb:PutItem
+        Resource: !GetAtt EmailTable.Arn
+    events:
+      - http:
+          path: auth/google/callback
+          method: get
+    package:
+      patterns:
+        - dist/handlers/callbackCodeHandler.js
+
+  listEmails:
+    handler: dist/handlers/listEmailHandler.handler
+    iamRoleStatements:
+      - Effect: 'Allow'
+        Action:
+          - dynamodb:GetItem
+          - dynamodb:UpdateItem
+        Resource: !GetAtt EmailTable.Arn
+    events:
+      - http:
+          path: list-emails
+          method: post
+    package:
+      patterns:
+        - dist/handlers/listEmailHandler.js
+
+resources:
+  Resources:
+    EmailTable:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        TableName: ${self:provider.environment.EMAIL_TABLE_NAME}
+        AttributeDefinitions:
+          - AttributeName: PK
+            AttributeType: S
+          - AttributeName: SK
+            AttributeType: S
+          - AttributeName: GSI1PK
+            AttributeType: S
+          - AttributeName: GSI1SK
+            AttributeType: S
+          - AttributeName: GSI2PK
+            AttributeType: S
+          - AttributeName: GSI2SK
+            AttributeType: S
+          - AttributeName: GSI3PK
+            AttributeType: S
+          - AttributeName: GSI3SK
+            AttributeType: S
+        KeySchema:
+          - AttributeName: PK
+            KeyType: HASH # PK debe ser la clave HASH
+          - AttributeName: SK
+            KeyType: RANGE # SK debe ser la clave RANGE
+        GlobalSecondaryIndexes:
+          - IndexName: GSI1
+            KeySchema:
+              - AttributeName: GSI1PK
+                KeyType: HASH
+              - AttributeName: GSI1SK
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+          - IndexName: GSI2
+            KeySchema:
+              - AttributeName: GSI2PK
+                KeyType: HASH
+              - AttributeName: GSI2SK
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+          - IndexName: GSI3
+            KeySchema:
+              - AttributeName: GSI3PK
+                KeyType: HASH
+              - AttributeName: GSI3SK
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        BillingMode: PAY_PER_REQUEST
+
+package:
+  individually: true
+  patterns:
+    - '!**/*'

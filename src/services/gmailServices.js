@@ -5,7 +5,8 @@ const {
   putNewItem,
   getItemPrimay,
   updateItem,
-} = require('../services/s3Services')
+  saveEmailsBatch,
+} = require('./dynamoDBServices')
 
 const tableNameEmail = process.env.EMAIL_TABLE_NAME
 const oauth2Client = new OAuth2(
@@ -69,7 +70,6 @@ const validateUserCredentials = async (emailUser) => {
 
 const updateUserCredentials = async (emailUser, access_token, expiry_date) => {
   let updated_at = Date.now().toString()
-
   const updateExpression =
     'SET access_token = :access_token, expiry_date = :expiry_date , updated_at = :updated_at, token_refresh = :token_refresh'
 
@@ -79,7 +79,6 @@ const updateUserCredentials = async (emailUser, access_token, expiry_date) => {
     ':updated_at': updated_at,
     ':token_refresh': true,
   }
-
   await updateItem(
     tableNameEmail,
     'TOKEN',
@@ -111,33 +110,87 @@ const verifyAndRefreshToken = async (userCredentials) => {
   return access_token
 }
 
-const listEmails = async (access_token) => {
+const listEmailsWithFullContent = async (access_token) => {
   oauth2Client.setCredentials({ access_token })
   const gmail = google.gmail({ version: 'v1', auth: oauth2Client })
 
   try {
+    // Listar los correos en la bandeja de entrada
     const response = await gmail.users.messages.list({
       userId: 'me',
       labelIds: ['INBOX'],
-      maxResults: 10,
+      maxResults: 2,
     })
-    return response.data.messages || []
+
+    const messages = response.data.messages || []
+
+    // Obtener el contenido completo de cada correo
+    const emailsWithFullContent = await Promise.all(
+      messages.map(async (message) => {
+        const msg = await gmail.users.messages.get({
+          userId: 'me',
+          id: message.id,
+          format: 'full', // Obtener el contenido completo del mensaje
+        })
+
+        // Extraer los encabezados y cuerpo del mensaje
+        const headers = msg.data.payload.headers
+        const subject =
+          headers.find((header) => header.name === 'Subject')?.value ||
+          '(No Subject)'
+        const from =
+          headers.find((header) => header.name === 'From')?.value ||
+          '(No From Address)'
+        const to =
+          headers.find((header) => header.name === 'To')?.value ||
+          '(No To Address)'
+        const date =
+          headers.find((header) => header.name === 'Date')?.value || '(No Date)'
+
+        // Extraer el cuerpo del mensaje
+        let body = ''
+        if (msg.data.payload.parts) {
+          msg.data.payload.parts.forEach((part) => {
+            if (part.mimeType === 'text/plain') {
+              body = Buffer.from(part.body.data, 'base64').toString('utf-8')
+            }
+          })
+        } else {
+          body = Buffer.from(msg.data.payload.body.data, 'base64').toString(
+            'utf-8',
+          )
+        }
+
+        return {
+          id: message.id,
+          threadId: message.threadId,
+          // labelIds: msg.data.labelIds,
+          // subject,
+          from,
+          to,
+          // date,
+          // body,
+        }
+      }),
+    )
+
+    return emailsWithFullContent
   } catch (error) {
-    console.error('Error listing emails:', error)
-    throw new Error('Error listing emails')
+    console.error('Error listing emails with full content:', error)
+    throw new Error('Error listing emails with full content')
   }
 }
 
 const listEmailUser = async (emailUser) => {
   const userCredentials = await validateUserCredentials(emailUser)
   const access_token = await verifyAndRefreshToken(userCredentials)
-  return await listEmails(access_token)
+  const emailsWithFullContent = await listEmailsWithFullContent(access_token)
+  await saveEmailsBatch(emailsWithFullContent, tableNameEmail)
+  return emailsWithFullContent
 }
 
 module.exports = {
   authUrlEmailService,
   changeCodeByToken,
-  getUserInfoService,
-  getTokenUser,
   listEmailUser,
 }

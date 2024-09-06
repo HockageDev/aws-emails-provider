@@ -54,6 +54,8 @@ functions:
         Action:
           - dynamodb:GetItem
           - dynamodb:UpdateItem
+          - dynamodb:BatchGetItem
+          - dynamodb:BatchWriteItem
         Resource: !GetAtt EmailTable.Arn
     events:
       - http:

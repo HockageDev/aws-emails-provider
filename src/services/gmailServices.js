@@ -134,61 +134,6 @@ const listEmailUser = async (emailUser) => {
   return await listEmails(access_token)
 }
 
-// const listEmailUser1 = async (emailUser) => {
-//   const userCredentials = await getTokenUser(emailUser)
-//   if (!userCredentials) {
-//     throw new Error('User no login')
-//   }
-//   let { access_token, refresh_token, expiry_date, token_refresh } =
-//     userCredentials
-
-//   const dateToday = new Date().getTime()
-//   if (token_refresh === true && dateToday > expiry_date) {
-//     throw new Error('User should login')
-//   }
-//   if (dateToday > expiry_date) {
-//     const newToken = await getTokenRefreshUser(refresh_token)
-//     access_token = newToken.access_token
-//     expiry_date = newToken.expiry_date
-
-//     let updated_at = Date.now().toString()
-
-//     const updateExpression =
-//       'SET access_token = :access_token, expiry_date = :expiry_date , updated_at = :updated_at, token_refresh = :token_refresh'
-
-//     const expressionAttributeValues = {
-//       ':access_token': access_token,
-//       ':expiry_date': expiry_date,
-//       ':updated_at': updated_at,
-//       ':token_refresh': true,
-//     }
-
-//     await updateItem(
-//       tableNameEmail,
-//       'TOKEN',
-//       `GMAIL#${emailUser}`,
-//       updateExpression,
-//       expressionAttributeValues,
-//     )
-//   }
-
-//   oauth2Client.setCredentials({ access_token })
-//   const gmail = google.gmail({ version: 'v1', auth: oauth2Client })
-
-//   try {
-//     const response = await gmail.users.messages.list({
-//       userId: 'me',
-//       labelIds: ['INBOX'],
-//       maxResults: 10,
-//     })
-
-//     return response.data.messages || []
-//   } catch (error) {
-//     console.error('Error listing emails:', error)
-//     throw new Error('Error listing emails')
-//   }
-// }
-
 module.exports = {
   authUrlEmailService,
   changeCodeByToken,

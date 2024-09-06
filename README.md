@@ -1,0 +1,1 @@
+# aws-emails-provider

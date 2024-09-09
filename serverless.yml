@@ -43,7 +43,7 @@ functions:
       patterns:
         - dist/handlers/authUrlMicrosodtEmailHandler.js
 
-  callback:
+  callbackGoogle:
     handler: dist/handlers/callbackCodeHandler.handler
     iamRoleStatements:
       - Effect: 'Allow'
@@ -57,6 +57,21 @@ functions:
     package:
       patterns:
         - dist/handlers/callbackCodeHandler.js
+
+  callbackMicrosoft:
+    handler: dist/handlers/callbackCodeMicrosoftHandler.handler
+    iamRoleStatements:
+      - Effect: 'Allow'
+        Action:
+          - dynamodb:PutItem
+        Resource: !GetAtt EmailTable.Arn
+    events:
+      - http:
+          path: auth/microsoft/callback
+          method: get
+    package:
+      patterns:
+        - dist/handlers/callbackCodeMicrosoftHandler.js
 
   listEmails:
     handler: dist/handlers/listEmailHandler.handler

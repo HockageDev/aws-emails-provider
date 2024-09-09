@@ -24289,7 +24289,6 @@ var require_dynamoDBServices = __commonJS({
       const batches = chunkArray(items, 25);
       for (const batch of batches) {
         const requestItems = batch.map((item) => {
-          console.log("\u{1F680} ~ requestItems ~ item:", item);
           const emailEntity = new MessageUserEntity(item);
           return {
             PutRequest: {

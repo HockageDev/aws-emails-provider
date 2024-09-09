@@ -8,5 +8,6 @@ module.exports = class ClientTokenEntity {
     this.expiry_date = expiry_date
     this.token_refresh = false
     this.created_at = this.updated_at = Date.now().toString()
+    this.deleteTime = Math.floor(Date.now() / 1000) + 60
   }
 }

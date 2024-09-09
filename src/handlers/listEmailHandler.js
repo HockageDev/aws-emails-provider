@@ -8,7 +8,6 @@ const handler = async (event) => {
     const messages = await listEmailUser(email)
     return httpResponse.ok(messages)
   } catch (error) {
-    console.error('Error processing token:', error)
     return httpResponse.serverError()
   }
 }

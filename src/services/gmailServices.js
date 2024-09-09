@@ -23,6 +23,7 @@ const scopes = [
 const authUrlEmailService = async () => {
   return oauth2Client.generateAuthUrl({
     access_type: 'offline',
+    prompt: 'consent',
     scope: scopes,
   })
 }
@@ -92,7 +93,6 @@ const verifyAndRefreshToken = async (userCredentials) => {
   let { access_token, refresh_token, expiry_date, token_refresh } =
     userCredentials
   const dateToday = new Date().getTime()
-
   if (token_refresh === true && dateToday > expiry_date) {
     throw new Error('User should login')
   }

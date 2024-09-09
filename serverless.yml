@@ -145,6 +145,9 @@ resources:
             KeyType: HASH # PK debe ser la clave HASH
           - AttributeName: SK
             KeyType: RANGE # SK debe ser la clave RANGE
+        TimeToLiveSpecification:
+          Enabled: true
+          AttributeName: 'deleteTime'
         GlobalSecondaryIndexes:
           - IndexName: GSI1
             KeySchema:

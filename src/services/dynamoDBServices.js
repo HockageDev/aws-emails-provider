@@ -52,7 +52,6 @@ const saveEmailsBatch = async (items, tableNameEmail) => {
 
   for (const batch of batches) {
     const requestItems = batch.map((item) => {
-      console.log('🚀 ~ requestItems ~ item:', item)
       const emailEntity = new MessageUserEntity(item)
 
       return {
@@ -80,42 +79,6 @@ const saveEmailsBatch = async (items, tableNameEmail) => {
     }
   }
 }
-
-// const saveEmailsBatch = async (items, tableNameEmail) => {
-//   const batches = chunkArray(items, 25) // Dividir los correos en lotes de 25
-
-//   for (const batch of batches) {
-//     const requestItems = batch.map((item) => ({
-//       PutRequest: {
-//         Item: {
-//           PK: { S: `MESSAGE` },
-//           SK: { S: `MESSAGE#GMAIL#${item.id}` },
-//           idMessage: { S: item.id || '' },
-//           subject: { S: item.subject || '' },
-//           from: { S: item.from || '' },
-//           to: { S: item.to || '' },
-//           date: { S: item.date || '' },
-//           body: { S: item.body || '' },
-//           // labelIds: { SS: item.labelIds || [] },
-//         },
-//         ConditionExpression: 'attribute_not_exists(SK)',
-//       },
-//     }))
-
-//     const params = {
-//       RequestItems: {
-//         [tableNameEmail]: requestItems,
-//       },
-//     }
-
-//     try {
-//       await client.send(new BatchWriteItemCommand(params))
-//     } catch (error) {
-//       console.error('Error saving batch to DynamoDB:', error)
-//       throw new Error('Error saving emails to DynamoDB')
-//     }
-//   }
-// }
 
 const updateItem = async (
   tableName,

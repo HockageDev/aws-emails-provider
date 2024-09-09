@@ -12,7 +12,7 @@ const tableNameEmail = process.env.EMAIL_TABLE_NAME
 const oauth2Client = new OAuth2(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
-  process.env.GOOGLE_REDIRECT_URL,
+  process.env.GOOGLE_REDIRECT_URL || process.env.GOOGLE_REDIRECT_URL2,
 )
 
 const scopes = [
@@ -115,25 +115,22 @@ const listEmailsWithFullContent = async (access_token) => {
   const gmail = google.gmail({ version: 'v1', auth: oauth2Client })
 
   try {
-    // Listar los correos en la bandeja de entrada
     const response = await gmail.users.messages.list({
       userId: 'me',
       labelIds: ['INBOX'],
-      maxResults: 2,
+      maxResults: 10,
     })
 
     const messages = response.data.messages || []
 
-    // Obtener el contenido completo de cada correo
     const emailsWithFullContent = await Promise.all(
       messages.map(async (message) => {
         const msg = await gmail.users.messages.get({
           userId: 'me',
           id: message.id,
-          format: 'full', // Obtener el contenido completo del mensaje
+          format: 'full',
         })
 
-        // Extraer los encabezados y cuerpo del mensaje
         const headers = msg.data.payload.headers
         const subject =
           headers.find((header) => header.name === 'Subject')?.value ||
@@ -147,7 +144,6 @@ const listEmailsWithFullContent = async (access_token) => {
         const date =
           headers.find((header) => header.name === 'Date')?.value || '(No Date)'
 
-        // Extraer el cuerpo del mensaje
         let body = ''
         if (msg.data.payload.parts) {
           msg.data.payload.parts.forEach((part) => {
@@ -164,12 +160,12 @@ const listEmailsWithFullContent = async (access_token) => {
         return {
           id: message.id,
           threadId: message.threadId,
-          // labelIds: msg.data.labelIds,
-          // subject,
+          labelIds: msg.data.labelIds,
+          subject,
           from,
           to,
-          // date,
-          // body,
+          date,
+          body,
         }
       }),
     )

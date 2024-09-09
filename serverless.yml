@@ -15,6 +15,7 @@ provider:
     GOOGLE_CLIENT_SECRET: ${env:GOOGLE_CLIENT_SECRET}
     GOOGLE_REDIRECT_URL: ${env:GOOGLE_REDIRECT_URL}
     EMAIL_TABLE_NAME: email-providers
+    SQS_QUEUE_NAME: email-queue-${self:provider.stage}
 
 plugins:
   - serverless-dotenv-plugin
@@ -57,6 +58,15 @@ functions:
           - dynamodb:BatchGetItem
           - dynamodb:BatchWriteItem
         Resource: !GetAtt EmailTable.Arn
+      - Effect: 'Allow'
+        Action:
+          - sqs:SendMessage
+          - sqs:ReceiveMessage
+          - sqs:DeleteMessage
+          - sqs:GetQueueAttributes
+          - sqs:GetQueueUrl
+        Resource: !GetAtt EmailQueue.Arn
+
     events:
       - http:
           path: list-emails
@@ -64,6 +74,48 @@ functions:
     package:
       patterns:
         - dist/handlers/listEmailHandler.js
+
+  listAllEmails:
+    handler: dist/handlers/ListAllEmailHandler.handler
+    iamRoleStatements:
+      - Effect: 'Allow'
+        Action:
+          - dynamodb:GetItem
+          - dynamodb:Query
+        Resource: !GetAtt EmailTable.Arn
+    events:
+      - http:
+          path: list-all-emails
+          method: post
+    package:
+      patterns:
+        - dist/handlers/ListAllEmailHandler.js
+
+  processEmailsSqs:
+    handler: dist/handlers/processEmailsHandler.handler
+    iamRoleStatements:
+      - Effect: 'Allow'
+        Action:
+          - sqs:ReceiveMessage
+          - sqs:DeleteMessage
+          - sqs:GetQueueAttributes
+          - sqs:GetQueueUrl
+        Resource:
+          - !GetAtt EmailQueue.Arn
+      - Effect: 'Allow'
+        Action:
+          - dynamodb:BatchWriteItem
+        Resource: !GetAtt EmailTable.Arn
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - EmailQueue
+              - Arn
+          batchSize: 10 # Número de mensajes que la Lambda procesará por invocación
+    package:
+      patterns:
+        - dist/handlers/processEmailsHandler.js
 
 resources:
   Resources:
@@ -119,6 +171,13 @@ resources:
             Projection:
               ProjectionType: ALL
         BillingMode: PAY_PER_REQUEST
+
+    EmailQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:provider.environment.SQS_QUEUE_NAME}
+        VisibilityTimeout: 60
+        MessageRetentionPeriod: 86400
 
 package:
   individually: true

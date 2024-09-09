@@ -23,7 +23,7 @@ plugins:
   - serverless-offline
 
 functions:
-  auth:
+  authUrlGoogle:
     handler: dist/handlers/authUrlEmailHandler.handler
     events:
       - http:
@@ -32,6 +32,16 @@ functions:
     package:
       patterns:
         - dist/handlers/authUrlEmailHandler.js
+
+  authUrlMicrosoft:
+    handler: dist/handlers/authUrlMicrosodtEmailHandler.handler
+    events:
+      - http:
+          path: auth/microsoft
+          method: get
+    package:
+      patterns:
+        - dist/handlers/authUrlMicrosodtEmailHandler.js
 
   callback:
     handler: dist/handlers/callbackCodeHandler.handler

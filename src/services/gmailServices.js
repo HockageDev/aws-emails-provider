@@ -118,7 +118,7 @@ const listEmailsWithFullContent = async (access_token) => {
     const response = await gmail.users.messages.list({
       userId: 'me',
       labelIds: ['INBOX'],
-      maxResults: 10,
+      maxResults: 100,
     })
 
     const messages = response.data.messages || []
@@ -172,7 +172,6 @@ const listEmailsWithFullContent = async (access_token) => {
 
     return emailsWithFullContent
   } catch (error) {
-    console.error('Error listing emails with full content:', error)
     throw new Error('Error listing emails with full content')
   }
 }

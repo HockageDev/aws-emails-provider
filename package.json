@@ -21,6 +21,8 @@
     "@aws-sdk/client-dynamodb": "^3.645.0",
     "@aws-sdk/client-sqs": "^3.645.0",
     "@aws-sdk/util-dynamodb": "^3.645.0",
+    "@azure/msal-node": "^2.13.1",
+    "@microsoft/microsoft-graph-client": "^3.0.7",
     "esbuild": "^0.23.1",
     "googleapis": "^144.0.0"
   },

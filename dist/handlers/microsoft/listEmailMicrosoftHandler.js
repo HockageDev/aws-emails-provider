@@ -43982,6 +43982,7 @@ var require_microsoftServices = __commonJS({
     var listEmailsService2 = /* @__PURE__ */ __name(async (emailUser) => {
       try {
         const clientToken = await getClientTokenByEmail(emailUser);
+        console.log("\u{1F680} ~ listEmailsService ~ clientToken:", clientToken);
         let accessToken = clientToken.access_token;
         const client = getAuthenticatedClient(accessToken);
         const result = await client.api("/me/messages").top(10).select("id,subject,from,body,isRead,receivedDateTime").orderby("receivedDateTime DESC").get();

@@ -99,6 +99,7 @@ const getAuthenticatedClient = (accessToken) => {
 const listEmailsService = async (emailUser) => {
   try {
     const clientToken = await getClientTokenByEmail(emailUser)
+    console.log('🚀 ~ listEmailsService ~ clientToken:', clientToken)
 
     let accessToken = clientToken.access_token
     const client = getAuthenticatedClient(accessToken)

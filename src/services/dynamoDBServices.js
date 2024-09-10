@@ -74,7 +74,6 @@ const saveEmailsBatch = async (items, tableNameEmail) => {
     try {
       await client.send(new BatchWriteItemCommand(params))
     } catch (error) {
-      console.error('Error saving batch to DynamoDB:', error)
       throw new Error('Error saving emails to DynamoDB')
     }
   }
@@ -152,7 +151,6 @@ const queryAllItems = async (tableName, pk) => {
       }
 
       const response = await client.send(new QueryCommand(params))
-      console.log('🚀 ~ queryAllItems ~ response:', response)
 
       // Si hay ítems, unmarshall cada uno
       if (response.Items) {
@@ -164,14 +162,11 @@ const queryAllItems = async (tableName, pk) => {
       lastEvaluatedKey = response.LastEvaluatedKey
     } while (lastEvaluatedKey) // Continuar mientras haya más ítems
 
-    console.log(`Total items returned: ${items.length}`)
-
     return {
       items,
       count: items.length, // Número total de ítems devueltos
     }
   } catch (error) {
-    console.error('Error in queryAllItems:', error)
     throw new Error(`Error in queryAllItems: ${error.message}`)
   }
 }

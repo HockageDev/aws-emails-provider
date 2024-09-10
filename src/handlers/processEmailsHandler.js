@@ -16,7 +16,6 @@ module.exports.handler = async (event) => {
       body: JSON.stringify('Emails processed successfully'),
     }
   } catch (error) {
-    console.error('Error processing emails:', error)
     throw new Error('Error processing emails')
   }
 }

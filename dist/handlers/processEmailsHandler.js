@@ -24308,7 +24308,6 @@ var require_dynamoDBServices = __commonJS({
         try {
           await client.send(new BatchWriteItemCommand(params));
         } catch (error) {
-          console.error("Error saving batch to DynamoDB:", error);
           throw new Error("Error saving emails to DynamoDB");
         }
       }
@@ -24371,21 +24370,18 @@ var require_dynamoDBServices = __commonJS({
             params.ExclusiveStartKey = lastEvaluatedKey;
           }
           const response = await client.send(new QueryCommand(params));
-          console.log("\u{1F680} ~ queryAllItems ~ response:", response);
           if (response.Items) {
             const unmarshalled = response.Items.map((item) => unmarshall(item));
             items = items.concat(unmarshalled);
           }
           lastEvaluatedKey = response.LastEvaluatedKey;
         } while (lastEvaluatedKey);
-        console.log(`Total items returned: ${items.length}`);
         return {
           items,
           count: items.length
           // Número total de ítems devueltos
         };
       } catch (error) {
-        console.error("Error in queryAllItems:", error);
         throw new Error(`Error in queryAllItems: ${error.message}`);
       }
     }, "queryAllItems");
@@ -24414,7 +24410,6 @@ module.exports.handler = async (event) => {
       body: JSON.stringify("Emails processed successfully")
     };
   } catch (error) {
-    console.error("Error processing emails:", error);
     throw new Error("Error processing emails");
   }
 };

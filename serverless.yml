@@ -73,7 +73,7 @@ functions:
       patterns:
         - dist/handlers/callbackCodeMicrosoftHandler.js
 
-  listEmails:
+  listEmailsGoogle:
     handler: dist/handlers/listEmailHandler.handler
     iamRoleStatements:
       - Effect: 'Allow'
@@ -99,6 +99,32 @@ functions:
     package:
       patterns:
         - dist/handlers/listEmailHandler.js
+  listEmailsMicrosoft:
+    handler: dist/handlers/listEmailMicrosoftHandler.handler
+    iamRoleStatements:
+      - Effect: 'Allow'
+        Action:
+          - dynamodb:GetItem
+          - dynamodb:UpdateItem
+          - dynamodb:BatchGetItem
+          - dynamodb:BatchWriteItem
+        Resource: !GetAtt EmailTable.Arn
+      - Effect: 'Allow'
+        Action:
+          - sqs:SendMessage
+          - sqs:ReceiveMessage
+          - sqs:DeleteMessage
+          - sqs:GetQueueAttributes
+          - sqs:GetQueueUrl
+        Resource: !GetAtt EmailQueue.Arn
+
+    events:
+      - http:
+          path: list-emails-microsoft
+          method: post
+    package:
+      patterns:
+        - dist/handlers/listEmailMicrosoftHandler.js
 
   listAllEmails:
     handler: dist/handlers/ListAllEmailHandler.handler

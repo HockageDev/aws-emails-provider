@@ -46,7 +46,6 @@ const sendBatchToSQS = async (queueUrl, batch) => {
       }
       return
     } else {
-      console.error('Un solo correo es demasiado grande para SQS.')
       return
     }
   }
@@ -60,7 +59,6 @@ const sendBatchToSQS = async (queueUrl, batch) => {
     const command = new SendMessageCommand(params)
     await Client.send(command)
   } catch (error) {
-    console.error('Error sending message to SQS:', error)
     throw new Error('Failed to send message to SQS', error)
   }
 }
@@ -76,7 +74,6 @@ const getQueueUrl = async (nameQueue) => {
     const response = await Client.send(command)
     return response.QueueUrl
   } catch (error) {
-    console.error('Error getting queue URL:', error)
     throw new Error('Failed to get queue URL', error)
   }
 }

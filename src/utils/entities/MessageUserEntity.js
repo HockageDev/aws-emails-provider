@@ -3,11 +3,11 @@ module.exports = class MessageUserEntity {
     this.PK = 'MESSAGE'
     this.SK = `MESSAGE#GMAIL#${id}`
     this.id = id
-    this.threadId = threadId
-    this.labelIds = labelIds
+    this.threadId = threadId ? threadId : undefined
+    this.labelIds = labelIds ? labelIds : undefined
     this.subject = subject ? subject : undefined
     this.from = from
-    this.to = to
+    this.to = to ? to : undefined
     this.date = date
     this.body = body ? body : undefined
   }

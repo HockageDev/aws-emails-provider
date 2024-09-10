@@ -1,7 +1,11 @@
 const { ConfidentialClientApplication } = require('@azure/msal-node')
 const { Client } = require('@microsoft/microsoft-graph-client')
 const ClientTokenEntity = require('../utils/entities/ClientTokenEntity')
-const { putNewItem, getItemPrimay } = require('./dynamoDBServices')
+const {
+  putNewItem,
+  getItemPrimay,
+  saveEmailsBatch,
+} = require('./dynamoDBServices')
 
 const tableNameEmail = process.env.EMAIL_TABLE_NAME
 const MICROSOFT_CLIENT_ID = process.env.MICROSOFT_CLIENT_ID
@@ -12,8 +16,7 @@ const SCOPES = ['User.Read', 'Mail.Read', 'openid', 'profile', 'offline_access']
 const cca = new ConfidentialClientApplication({
   auth: {
     clientId: MICROSOFT_CLIENT_ID,
-    authority: `https://login.microsoftonline.com/common`,
-    // authority: `https://login.microsoftonline.com/${process.env.MICROSOFT_AUTHORITY}`,
+    authority: `https://login.microsoftonline.com/${process.env.MICROSOFT_AUTHORITY}`,
     clientSecret: MICROSOFT_SECRET_ID_VALUE,
   },
 })
@@ -106,15 +109,18 @@ const listEmailsService = async (emailUser) => {
       .get()
 
     const emails = result.value.map((email) => ({
+      id: email.id,
+      threadId: email.id,
       subject: email.subject,
       from: email.from.emailAddress.address,
-      // to: email.toRecipients.map((recipient) => recipient.emailAddress.address),
-      receivedDateTime: email.receivedDateTime,
+      date: email.receivedDateTime,
+      body: email.body.content,
     }))
 
+    await saveEmailsBatch(emails, tableNameEmail)
     return emails
   } catch (error) {
-    throw new Error('Failed to list emails.')
+    throw new Error('Failed to list emails.', error)
   }
 }
 module.exports = {

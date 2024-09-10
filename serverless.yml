@@ -23,28 +23,19 @@ plugins:
   - serverless-offline
 
 functions:
+  # --------------------GOOGLE ----------------------------------------------------
   authUrlGoogle:
-    handler: dist/handlers/authUrlEmailHandler.handler
+    handler: dist/handlers/google/authUrlGoogleEmailHandler.handler
     events:
       - http:
           path: auth/google
           method: get
     package:
       patterns:
-        - dist/handlers/authUrlEmailHandler.js
-
-  authUrlMicrosoft:
-    handler: dist/handlers/authUrlMicrosodtEmailHandler.handler
-    events:
-      - http:
-          path: auth/microsoft
-          method: get
-    package:
-      patterns:
-        - dist/handlers/authUrlMicrosodtEmailHandler.js
+        - dist/handlers/google/authUrlGoogleEmailHandler.js
 
   callbackGoogle:
-    handler: dist/handlers/callbackCodeHandler.handler
+    handler: dist/handlers/google/callbackCodeGoogleHandler.handler
     iamRoleStatements:
       - Effect: 'Allow'
         Action:
@@ -56,10 +47,48 @@ functions:
           method: get
     package:
       patterns:
-        - dist/handlers/callbackCodeHandler.js
+        - dist/handlers/google/callbackCodeGoogleHandler.js
+
+  listEmailsGoogle:
+    handler: dist/handlers/google/listEmailGoogleHandler.handler
+    iamRoleStatements:
+      - Effect: 'Allow'
+        Action:
+          - dynamodb:GetItem
+          - dynamodb:UpdateItem
+          - dynamodb:BatchGetItem
+          - dynamodb:BatchWriteItem
+        Resource: !GetAtt EmailTable.Arn
+      - Effect: 'Allow'
+        Action:
+          - sqs:SendMessage
+          - sqs:ReceiveMessage
+          - sqs:DeleteMessage
+          - sqs:GetQueueAttributes
+          - sqs:GetQueueUrl
+        Resource: !GetAtt EmailQueue.Arn
+    events:
+      - http:
+          path: auth/google/list-mails
+          method: post
+    package:
+      patterns:
+        - dist/handlers/google/listEmailGoogleHandler.js
+
+  # ------------------------Microsoft -----------------------------------
+
+  authUrlMicrosoft:
+    handler: dist/handlers/microsoft/authUrlMicrosodtEmailHandler.handler
+    events:
+      - http:
+          path: auth/microsoft
+          method: get
+    package:
+      patterns:
+        - dist/handlers/microsoft/authUrlMicrosodtEmailHandler.js
 
   callbackMicrosoft:
-    handler: dist/handlers/callbackCodeMicrosoftHandler.handler
+    handler: dist/handlers/microsoft/callbackCodeMicrosoftHandler.handler
     iamRoleStatements:
       - Effect: 'Allow'
         Action:
@@ -71,36 +100,10 @@ functions:
           method: get
     package:
       patterns:
-        - dist/handlers/callbackCodeMicrosoftHandler.js
+        - dist/handlers/microsoft/callbackCodeMicrosoftHandler.js
 
-  listEmailsGoogle:
-    handler: dist/handlers/listEmailHandler.handler
-    iamRoleStatements:
-      - Effect: 'Allow'
-        Action:
-          - dynamodb:GetItem
-          - dynamodb:UpdateItem
-          - dynamodb:BatchGetItem
-          - dynamodb:BatchWriteItem
-        Resource: !GetAtt EmailTable.Arn
-      - Effect: 'Allow'
-        Action:
-          - sqs:SendMessage
-          - sqs:ReceiveMessage
-          - sqs:DeleteMessage
-          - sqs:GetQueueAttributes
-          - sqs:GetQueueUrl
-        Resource: !GetAtt EmailQueue.Arn
-
-    events:
-      - http:
-          path: list-emails
-          method: post
-    package:
-      patterns:
-        - dist/handlers/listEmailHandler.js
   listEmailsMicrosoft:
-    handler: dist/handlers/listEmailMicrosoftHandler.handler
+    handler: dist/handlers/microsoft/listEmailMicrosoftHandler.handler
     iamRoleStatements:
       - Effect: 'Allow'
         Action:
@@ -120,11 +123,13 @@ functions:
 
     events:
       - http:
-          path: list-emails-microsoft
+          path: auth/microsoft/list-mails
           method: post
     package:
       patterns:
-        - dist/handlers/listEmailMicrosoftHandler.js
+        - dist/handlers/microsoft/listEmailMicrosoftHandler.js
+
+  # ----------------------------------------Inbox--------------------------------------------
 
   listAllEmails:
     handler: dist/handlers/ListAllEmailHandler.handler
@@ -142,32 +147,7 @@ functions:
       patterns:
         - dist/handlers/ListAllEmailHandler.js
 
-  processEmailsSqs:
-    handler: dist/handlers/processEmailsHandler.handler
-    iamRoleStatements:
-      - Effect: 'Allow'
-        Action:
-          - sqs:ReceiveMessage
-          - sqs:DeleteMessage
-          - sqs:GetQueueAttributes
-          - sqs:GetQueueUrl
-        Resource:
-          - !GetAtt EmailQueue.Arn
-      - Effect: 'Allow'
-        Action:
-          - dynamodb:BatchWriteItem
-        Resource: !GetAtt EmailTable.Arn
-    events:
-      - sqs:
-          arn:
-            Fn::GetAtt:
-              - EmailQueue
-              - Arn
-          batchSize: 10 # Número de mensajes que la Lambda procesará por invocación
-    package:
-      patterns:
-        - dist/handlers/processEmailsHandler.js
-
+# ------------------------------Resources--------------------------------------------
 resources:
   Resources:
     EmailTable:

@@ -47,8 +47,9 @@ const getTokenUser = async (emailUser) => {
   const userToken = await getItemPrimay(
     tableNameEmail,
     'TOKEN',
-    `GMAIL#${emailUser}`,
+    `MAIL#${emailUser}`,
   )
+
   return userToken
 }
 
@@ -118,7 +119,7 @@ const listEmailsWithFullContent = async (access_token) => {
     const response = await gmail.users.messages.list({
       userId: 'me',
       labelIds: ['INBOX'],
-      maxResults: 100,
+      maxResults: 10,
     })
 
     const messages = response.data.messages || []

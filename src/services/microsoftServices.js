@@ -36,8 +36,6 @@ const changeCodeByTokenService = async (authCode) => {
     scopes: SCOPES,
     redirectUri: MICROSOFT_REDIRECT_URL,
   }
-  console.log('🚀 ~ changeCodeByTokenService ~  codeRequest:', codeRequest)
-
   try {
     const credentials = await cca.acquireTokenByCode(codeRequest)
     const tokenCache = cca.getTokenCache().serialize()
@@ -51,15 +49,9 @@ const changeCodeByTokenService = async (authCode) => {
       refresh_token,
       expiry_date: credentials.expiresOn,
     }
-    console.log('🚀 ~ changeCodeByTokenService ~ result:', result)
     const clientTokenEntity = new ClientTokenEntity(result)
-    console.log(
-      '🚀 ~ changeCodeByTokenService ~ clientTokenEntity :',
-      clientTokenEntity,
-    )
     await putNewItem(tableNameEmail, clientTokenEntity)
   } catch (error) {
-    console.log('🚀 ~ changeCodeByTokenService ~ error:', error)
     throw new Error('Failed to exchange authorization code for tokens.')
   }
 }
@@ -70,8 +62,6 @@ const getClientTokenByEmail = async (emailUser) => {
     'TOKEN',
     `MAIL#${emailUser}`,
   )
-
-  console.log('��� ~ getClientTokenByEmail ~ userEmail:', userEmail)
   return userEmail
 }
 
@@ -107,8 +97,6 @@ const listEmailsService = async (emailUser) => {
     const clientToken = await getClientTokenByEmail(emailUser)
 
     let accessToken = clientToken.access_token
-    console.log('🚀 ~ listEmailsService ~  accessToken:', accessToken)
-
     const client = getAuthenticatedClient(accessToken)
     const result = await client
       .api('/me/messages')
@@ -126,7 +114,6 @@ const listEmailsService = async (emailUser) => {
 
     return emails
   } catch (error) {
-    console.log('#######', error)
     throw new Error('Failed to list emails.')
   }
 }

@@ -16,7 +16,8 @@ const SCOPES = ['User.Read', 'Mail.Read', 'openid', 'profile', 'offline_access']
 const cca = new ConfidentialClientApplication({
   auth: {
     clientId: MICROSOFT_CLIENT_ID,
-    authority: `https://login.microsoftonline.com/${process.env.MICROSOFT_AUTHORITY}`,
+    authority: `https://login.microsoftonline.com/common`,
+    // authority: `https://login.microsoftonline.com/${process.env.MICROSOFT_AUTHORITY}`,
     clientSecret: MICROSOFT_SECRET_ID_VALUE,
   },
 })
@@ -95,55 +96,11 @@ const getAuthenticatedClient = (accessToken) => {
   })
 }
 
-// const validateUserCredentials = async (emailUser) => {
-//   const userCredentials = await getClientTokenByEmail(emailUser)
-//   if (!userCredentials) {
-//     throw new Error('User no login')
-//   }
-//   return userCredentials
-// }
-
-// const verifyAndRefreshToken = async (userCredentials) => {
-//   let { access_token, refresh_token, expiry_date, token_refresh } =
-//     userCredentials
-
-//   const now = new Date().getTime()
-//   const tokenExpiryTime = new Date(expiry_date).getTime()
-
-//   if (now >= tokenExpiryTime) {
-//     console.log('Token expired, refreshing...')
-
-//     try {
-//       const newCredentials = await cca.acquireTokenByRefreshToken({
-//         refreshToken: refresh_token,
-//         scopes: SCOPES,
-//       })
-//       console.log('newCredentials', newCredentials)
-
-//       const updatedCredentials = {
-//         emailUser: newCredentials.account.username,
-//         access_token: newCredentials.accessToken,
-//         refresh_token,
-//         expiry_date: newCredentials.expiresOn,
-//       }
-//       const clientTokenEntity = new ClientTokenEntity(updatedCredentials)
-//       await putNewItem(tableNameEmail, clientTokenEntity)
-
-//       return newCredentials.accessToken
-//     } catch (error) {
-//       console.log('failed refresh', error)
-//       throw new Error(`Failed to refresh token: ${error.message}`)
-//     }
-//   } else {
-//     return access_token
-//   }
-// }
-
 const listEmailsService = async (emailUser) => {
   try {
     const clientToken = await getClientTokenByEmail(emailUser)
-    const accessToken = clientToken.access_token
-    console.log('🚀 ~ listEmailsService ~ accessToken :', accessToken)
+
+    let accessToken = clientToken.access_token
     const client = getAuthenticatedClient(accessToken)
     const result = await client
       .api('/me/messages')
@@ -164,7 +121,6 @@ const listEmailsService = async (emailUser) => {
     await saveEmailsBatch(emails, tableNameEmail)
     return emails
   } catch (error) {
-    console.log('��� ~ listEmailsService ~ error:', error)
     throw new Error('Failed to list emails.', error)
   }
 }

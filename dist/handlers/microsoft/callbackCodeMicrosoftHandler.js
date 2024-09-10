@@ -43909,7 +43909,8 @@ var require_microsoftServices = __commonJS({
     var cca = new ConfidentialClientApplication2({
       auth: {
         clientId: MICROSOFT_CLIENT_ID,
-        authority: `https://login.microsoftonline.com/${process.env.MICROSOFT_AUTHORITY}`,
+        authority: `https://login.microsoftonline.com/common`,
+        // authority: `https://login.microsoftonline.com/${process.env.MICROSOFT_AUTHORITY}`,
         clientSecret: MICROSOFT_SECRET_ID_VALUE
       }
     });
@@ -43981,8 +43982,7 @@ var require_microsoftServices = __commonJS({
     var listEmailsService = /* @__PURE__ */ __name(async (emailUser) => {
       try {
         const clientToken = await getClientTokenByEmail(emailUser);
-        const accessToken = clientToken.access_token;
-        console.log("\u{1F680} ~ listEmailsService ~ accessToken :", accessToken);
+        let accessToken = clientToken.access_token;
         const client = getAuthenticatedClient(accessToken);
         const result = await client.api("/me/messages").top(10).select("id,subject,from,body,isRead,receivedDateTime").orderby("receivedDateTime DESC").get();
         const emails = result.value.map((email) => ({
@@ -43996,7 +43996,6 @@ var require_microsoftServices = __commonJS({
         await saveEmailsBatch(emails, tableNameEmail);
         return emails;
       } catch (error) {
-        console.log("\uFFFD\uFFFD\uFFFD ~ listEmailsService ~ error:", error);
         throw new Error("Failed to list emails.", error);
       }
     }, "listEmailsService");

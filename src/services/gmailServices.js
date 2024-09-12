@@ -119,7 +119,7 @@ const listEmailsWithFullContent = async (access_token) => {
     const response = await gmail.users.messages.list({
       userId: 'me',
       labelIds: ['INBOX'],
-      maxResults: 10,
+      maxResults: 200,
     })
 
     const messages = response.data.messages || []
@@ -182,7 +182,7 @@ const listEmailUser = async (emailUser) => {
   const access_token = await verifyAndRefreshToken(userCredentials)
   const emailsWithFullContent = await listEmailsWithFullContent(access_token)
   await saveEmailsBatch(emailsWithFullContent, tableNameEmail)
-  return emailsWithFullContent
+  // return emailsWithFullContent
 }
 
 module.exports = {

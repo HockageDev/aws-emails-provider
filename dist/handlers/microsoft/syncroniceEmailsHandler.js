@@ -1,0 +1,1 @@
+var c=async s=>{try{let e=s.Records;for(let r of e){let o=JSON.parse(r.body);console.log("Received SQS messages:",o)}}catch(e){throw console.error("Error processing SQS messages:",e),new Error("Failed to process SQS messages.")}};module.exports={handler:c};

@@ -43,6 +43,7 @@ const getItemPrimay = async (tableName, pk, sk) => {
     const data = await client.send(new GetItemCommand(params))
     return data.Item ? unmarshall(data.Item) : null
   } catch (error) {
+    console.log('ERROR', error)
     throw new Error('ErrorGetItem', error)
   }
 }

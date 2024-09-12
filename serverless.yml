@@ -102,8 +102,8 @@ functions:
       patterns:
         - dist/handlers/microsoft/callbackCodeMicrosoftHandler.js
 
-  listEmailsMicrosoft:
-    handler: dist/handlers/microsoft/listEmailMicrosoftHandler.handler
+  sendIdEmailQueueMicrosof:
+    handler: dist/handlers/microsoft/sendIdEmailQueueMicrosoftHandler.handler
     iamRoleStatements:
       - Effect: 'Allow'
         Action:
@@ -123,11 +123,35 @@ functions:
 
     events:
       - http:
-          path: auth/microsoft/list-mails
+          path: auth/microsoft/sincronice
           method: post
     package:
       patterns:
-        - dist/handlers/microsoft/listEmailMicrosoftHandler.js
+        - dist/handlers/microsoft/sendIdEmailQueueMicrosoftHandler.js
+
+  syncroniceEmailsMicrosoft:
+    handler: dist/handlers/microsoft/syncroniceEmailsHandler.handler
+    iamRoleStatements:
+      - Effect: 'Allow'
+        Action:
+          - dynamodb:GetItem
+          - dynamodb:PutItem
+        Resource: !GetAtt EmailTable.Arn
+      - Effect: 'Allow'
+        Action:
+          - sqs:SendMessage
+          - sqs:ReceiveMessage
+          - sqs:DeleteMessage
+          - sqs:GetQueueAttributes
+          - sqs:GetQueueUrl
+        Resource: !GetAtt EmailQueue.Arn
+    events:
+      - sqs:
+          arn: !GetAtt EmailQueue.Arn
+          batchSize: 10
+    package:
+      patterns:
+        - dist/handlers/microsoft/syncroniceEmailsHandler.js
 
   # ----------------------------------------Inbox--------------------------------------------
 

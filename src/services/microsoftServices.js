@@ -1,13 +1,11 @@
 const { ConfidentialClientApplication } = require('@azure/msal-node')
 const { Client } = require('@microsoft/microsoft-graph-client')
 const ClientTokenEntity = require('../utils/entities/ClientTokenEntity')
-const {
-  putNewItem,
-  getItemPrimay,
-  saveEmailsBatch,
-} = require('./dynamoDBServices')
+const { putNewItem, getItemPrimay } = require('./dynamoDBServices')
+const { sendSqsService } = require('./sqsServices')
 
-const tableNameEmail = process.env.EMAIL_TABLE_NAME
+const TABLE_EMAIL = process.env.EMAIL_TABLE_NAME
+const SQS_NAME = process.env.SQS_QUEUE_NAME
 const MICROSOFT_CLIENT_ID = process.env.MICROSOFT_CLIENT_ID
 const MICROSOFT_SECRET_ID_VALUE = process.env.MICROSOFT_SECRET_ID_VALUE
 const MICROSOFT_REDIRECT_URL = process.env.MICROSOFT_REDIRECT_URL
@@ -17,7 +15,6 @@ const cca = new ConfidentialClientApplication({
   auth: {
     clientId: MICROSOFT_CLIENT_ID,
     authority: `https://login.microsoftonline.com/common`,
-    // authority: `https://login.microsoftonline.com/${process.env.MICROSOFT_AUTHORITY}`,
     clientSecret: MICROSOFT_SECRET_ID_VALUE,
   },
 })
@@ -43,52 +40,83 @@ const changeCodeByTokenService = async (authCode) => {
   try {
     const credentials = await cca.acquireTokenByCode(codeRequest)
     const tokenCache = cca.getTokenCache().serialize()
-    const refreshTokenObject = JSON.parse(tokenCache).RefreshToken
-    const refresh_token =
-      refreshTokenObject[Object.keys(refreshTokenObject)[0]].secret
 
     const result = {
       emailUser: credentials.account.username,
       access_token: credentials.accessToken,
       refresh_token,
       expiry_date: credentials.expiresOn,
+      token_cache: tokenCache,
     }
     const clientTokenEntity = new ClientTokenEntity(result)
-    await putNewItem(tableNameEmail, clientTokenEntity)
+    await putNewItem(TABLE_EMAIL, clientTokenEntity)
   } catch (error) {
     throw new Error('Failed to exchange authorization code for tokens.')
   }
 }
 
-const getClientTokenByEmail = async (emailUser) => {
-  const userEmail = await getItemPrimay(
-    tableNameEmail,
-    'TOKEN',
-    `MAIL#${emailUser}`,
-  )
-  return userEmail
-}
+const syncroniceEmailsService = async (emailUser) => {
+  try {
+    const credentialUser = await credentialsUserEmailAux(emailUser)
+    if (credentialUser == null) {
+      throw new Error('Failed to get credential user.')
+    }
+    let accessToken = await persistentTokenUserAux(credentialUser, emailUser)
 
-const refreshAccessTokenService = async (emailUser) => {
-  const clientToken = await getClientTokenByEmail(emailUser)
-  const { refresh_token } = clientToken
+    const client = await AuthenticatedClientMicrosoftAux(accessToken)
 
-  const newCredentials = await cca.acquireTokenByRefreshToken({
-    refreshToken: refresh_token,
-    scopes: SCOPES,
-  })
+    const now = new Date()
+    const pastTimeHours = new Date(
+      now.getTime() - 24 * 60 * 60 * 1000,
+    ).toISOString()
 
-  const result = {
-    emailUser: newCredentials.account.username,
-    access_token: newCredentials.accessToken,
-    refresh_token,
-    expiry_date: newCredentials.expiresOn,
+    const result = await client
+      .api('/me/mailFolders/inbox/messages')
+      .select('id')
+      .filter(`receivedDateTime ge ${pastTimeHours}`)
+      .orderby('receivedDateTime DESC')
+      .get()
+
+    const emailIds = result.value.map((email) => email.id)
+
+    await sendSqsService(SQS_NAME, emailIds)
+    return emailIds
+  } catch (error) {
+    console.error('Eroor', error)
+    throw new Error('Failed to list emails.', error)
   }
-  const clientTokenEntity = new ClientTokenEntity(result)
-  await putNewItem(tableNameEmail, clientTokenEntity)
 }
 
-const getAuthenticatedClient = (accessToken) => {
+const getEmailByIdService = async (emailUser, messageId) => {
+  try {
+    const credentialUser = await credentialsUserEmailAux(emailUser)
+    if (credentialUser == null) {
+      throw new Error('Failed to get credential user.')
+    }
+    let accessToken = await persistentTokenUserAux(credentialUser, emailUser)
+    const client = await AuthenticatedClientMicrosoftAux(accessToken)
+    const email = await client.api(`/me/messages/${messageId}`).get()
+    return email
+  } catch (error) {
+    console.error('Error retrieving email by ID', error)
+    throw new Error(`Failed to retrieve email by ID: ${messageId}`)
+  }
+}
+
+const credentialsUserEmailAux = async (emailUser) => {
+  try {
+    const userEmail = await getItemPrimay(
+      TABLE_EMAIL,
+      'TOKEN',
+      `MAIL#${emailUser}`,
+    )
+    return userEmail
+  } catch (error) {
+    throw new Error(`Error retrieving client token: ${error.message}`)
+  }
+}
+
+const AuthenticatedClientMicrosoftAux = async (accessToken) => {
   return Client.init({
     authProvider: (done) => {
       done(null, accessToken)
@@ -96,38 +124,47 @@ const getAuthenticatedClient = (accessToken) => {
   })
 }
 
-const listEmailsService = async (emailUser) => {
-  try {
-    const clientToken = await getClientTokenByEmail(emailUser)
-    console.log('🚀 ~ listEmailsService ~ clientToken:', clientToken)
+const persistentTokenUserAux = async (credential, emailUser) => {
+  let { access_token, expiry_date, token_cache } = credential
+  let now = new Date().getTime()
+  if (token_cache) {
+    await cca.getTokenCache().deserialize(token_cache)
+  }
 
-    let accessToken = clientToken.access_token
-    const client = getAuthenticatedClient(accessToken)
-    const result = await client
-      .api('/me/messages')
-      .top(10)
-      .select('id,subject,from,body,isRead,receivedDateTime')
-      .orderby('receivedDateTime DESC')
-      .get()
+  if (now >= expiry_date) {
+    const account = (await cca.getTokenCache().getAllAccounts()).find(
+      (acc) => acc.username === emailUser,
+    )
+    const silentRequest = {
+      account: account,
+      scopes: SCOPES,
+    }
 
-    const emails = result.value.map((email) => ({
-      id: email.id,
-      threadId: email.id,
-      subject: email.subject,
-      from: email.from.emailAddress.address,
-      date: email.receivedDateTime,
-      body: email.body.content,
-    }))
-
-    await saveEmailsBatch(emails, tableNameEmail)
-    return emails
-  } catch (error) {
-    throw new Error('Failed to list emails.', error)
+    try {
+      const tokenResponse = await cca.acquireTokenSilent(silentRequest)
+      const tokenCache = cca.getTokenCache().serialize()
+      const result = {
+        emailUser: tokenResponse.account.username,
+        access_token: tokenResponse.accessToken,
+        expiry_date: tokenResponse.expiresOn,
+        token_cache: tokenCache,
+        token_refresh: true,
+      }
+      const clientTokenEntity = new ClientTokenEntity(result)
+      await putNewItem(TABLE_EMAIL, clientTokenEntity)
+      access_token = tokenResponse.accessToken
+      return access_token
+    } catch (error) {
+      throw new Error(`Failed to refresh token: ${error.message}`)
+    }
+  } else {
+    return access_token
   }
 }
+
 module.exports = {
   authUrlEmailService,
   changeCodeByTokenService,
-  refreshAccessTokenService,
-  listEmailsService,
+  syncroniceEmailsService,
+  getEmailByIdService,
 }

@@ -79,7 +79,12 @@ const syncroniceEmailsService = async (emailUser) => {
 
     const emailIds = result.value.map((email) => email.id)
 
-    await sendSqsService(SQS_NAME, emailIds)
+    const payload = {
+      emailUser: emailUser,
+      emailIds: emailIds,
+    }
+
+    await sendSqsService(SQS_NAME, payload)
     return emailIds
   } catch (error) {
     console.error('Eroor', error)

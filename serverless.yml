@@ -139,6 +139,11 @@ functions:
         Resource: !GetAtt EmailTable.Arn
       - Effect: 'Allow'
         Action:
+          - s3:PutObject
+          - s3:GetObject
+        Resource: !Sub 'arn:aws:s3:::${self:provider.environment.S3_BUCKET_NAME}/*'
+      - Effect: 'Allow'
+        Action:
           - sqs:SendMessage
           - sqs:ReceiveMessage
           - sqs:DeleteMessage
@@ -241,6 +246,24 @@ resources:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: ${self:provider.environment.S3_BUCKET_NAME}
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: false
+          BlockPublicPolicy: false
+          IgnorePublicAcls: false
+          RestrictPublicBuckets: false
+
+    PublicBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket: !Ref EmailS3
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Sid: PublicReadGetObject
+              Effect: Allow
+              Principal: '*'
+              Action: 's3:GetObject'
+              Resource: !Sub 'arn:aws:s3:::${EmailS3}/*'
 
 package:
   individually: true

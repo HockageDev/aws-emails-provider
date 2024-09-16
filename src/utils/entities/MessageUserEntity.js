@@ -1,18 +1,3 @@
-// module.exports = class MessageUserEntity {
-//   constructor({ id, threadId, labelIds, subject, from, to, date, body }) {
-//     this.PK = 'MESSAGE'
-//     this.SK = `MESSAGE#GMAIL#${id}`
-//     this.id = id
-//     this.threadId = threadId ? threadId : undefined
-//     this.labelIds = labelIds ? labelIds : undefined
-//     this.subject = subject ? subject : undefined
-//     this.from = from
-//     this.to = to ? to : undefined
-//     this.date = date
-//     this.body = body ? body : undefined
-//   }
-// }
-
 module.exports = class MessageUserEntity {
   constructor({
     id,
@@ -20,8 +5,6 @@ module.exports = class MessageUserEntity {
     labelIds,
     subject,
     from,
-    to,
-    date,
     body,
     createdDateTime,
     lastModifiedDateTime,
@@ -40,10 +23,12 @@ module.exports = class MessageUserEntity {
     isDraft,
     webLink,
     inferenceClassification,
-    ccRecipients,
-    bccRecipients,
     replyTo,
     flag,
+    toRecipients,
+    ccRecipients,
+    bccRecipients,
+    attachmentUrls,
   }) {
     this.PK = 'MESSAGE'
     this.SK = `MESSAGE#MAIL#${id}`
@@ -52,9 +37,9 @@ module.exports = class MessageUserEntity {
     this.labelIds = labelIds || undefined
     this.subject = subject || undefined
     this.from = from
-    this.to = to || undefined
-    this.date = date || undefined
     this.body = body || undefined
+    this.attachments =
+      attachmentUrls && attachmentUrls.length > 0 ? attachmentUrls : undefined
 
     // Nuevos campos añadidos
     this.createdDateTime = createdDateTime || undefined
@@ -74,6 +59,7 @@ module.exports = class MessageUserEntity {
     this.isDraft = isDraft || false
     this.webLink = webLink || undefined
     this.inferenceClassification = inferenceClassification || 'other'
+    this.toRecipients = toRecipients || undefined
     this.ccRecipients = ccRecipients || undefined
     this.bccRecipients = bccRecipients || undefined
     this.replyTo = replyTo || undefined

@@ -16,7 +16,7 @@ const client = new DynamoDBClient({
   region: region,
 })
 
-const putNewItem = async (tableName, itemBody) => {
+const createItemService = async (tableName, itemBody) => {
   const params = {
     TableName: tableName,
     Item: marshall(itemBody, {
@@ -27,11 +27,12 @@ const putNewItem = async (tableName, itemBody) => {
   try {
     await client.send(new PutItemCommand(params))
   } catch (error) {
+    console.log('🚀 ~ createItemService ~ error:', error)
     throw new Error('ErrorPutnewItem', error)
   }
 }
 
-const getItemPrimay = async (tableName, pk, sk) => {
+const getPrimaryItemService = async (tableName, pk, sk) => {
   const params = {
     TableName: tableName,
     Key: marshall({
@@ -48,7 +49,7 @@ const getItemPrimay = async (tableName, pk, sk) => {
   }
 }
 
-const saveEmailsBatch = async (items, tableNameEmail) => {
+const addBatchEmailService = async (items, tableNameEmail) => {
   const batches = chunkArray(items, 25)
 
   for (const batch of batches) {
@@ -80,7 +81,7 @@ const saveEmailsBatch = async (items, tableNameEmail) => {
   }
 }
 
-const updateItem = async (
+const updateItemService = async (
   tableName,
   pk,
   sk,
@@ -105,7 +106,7 @@ const updateItem = async (
   }
 }
 
-const getAllItems = async (tableName, pk) => {
+const getAllItemsService = async (tableName, pk) => {
   const params = {
     TableName: tableName,
     KeyConditionExpression: 'PK = :pk',
@@ -128,7 +129,7 @@ const getAllItems = async (tableName, pk) => {
   }
 }
 
-const queryAllItems = async (tableName, pk) => {
+const queryAllItemsService = async (tableName, pk) => {
   const params = {
     TableName: tableName,
     KeyConditionExpression: 'PK = :pk',
@@ -173,10 +174,10 @@ const queryAllItems = async (tableName, pk) => {
 }
 
 module.exports = {
-  putNewItem,
-  getItemPrimay,
-  updateItem,
-  saveEmailsBatch,
-  queryAllItems,
-  getAllItems,
+  createItemService,
+  getPrimaryItemService,
+  updateItemService,
+  addBatchEmailService,
+  queryAllItemsService,
+  getAllItemsService,
 }

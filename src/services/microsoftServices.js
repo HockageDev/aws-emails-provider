@@ -1,14 +1,17 @@
 const { ConfidentialClientApplication } = require('@azure/msal-node')
 const { Client } = require('@microsoft/microsoft-graph-client')
 const ClientTokenEntity = require('../utils/entities/ClientTokenEntity')
-const { putNewItem, getItemPrimay } = require('./dynamoDBServices')
+const {
+  createItemService,
+  getPrimaryItemService,
+} = require('./dynamoDBServices')
 const { sendSqsService } = require('./sqsServices')
 
 const TABLE_EMAIL = process.env.EMAIL_TABLE_NAME
 const SQS_NAME = process.env.SQS_QUEUE_NAME
 const MICROSOFT_CLIENT_ID = process.env.MICROSOFT_CLIENT_ID
 const MICROSOFT_SECRET_ID_VALUE = process.env.MICROSOFT_SECRET_ID_VALUE
-const MICROSOFT_REDIRECT_URL = process.env.MICROSOFT_REDIRECT_URL
+const MICROSOFT_REDIRECT_URL = process.env.MICROSOFT_REDIRECT_URL2
 const SCOPES = ['User.Read', 'Mail.Read', 'openid', 'profile', 'offline_access']
 
 const cca = new ConfidentialClientApplication({
@@ -44,12 +47,11 @@ const changeCodeByTokenService = async (authCode) => {
     const result = {
       emailUser: credentials.account.username,
       access_token: credentials.accessToken,
-      refresh_token,
       expiry_date: credentials.expiresOn,
       token_cache: tokenCache,
     }
     const clientTokenEntity = new ClientTokenEntity(result)
-    await putNewItem(TABLE_EMAIL, clientTokenEntity)
+    await createItemService(TABLE_EMAIL, clientTokenEntity)
   } catch (error) {
     throw new Error('Failed to exchange authorization code for tokens.')
   }
@@ -70,8 +72,10 @@ const syncroniceEmailsService = async (emailUser) => {
       now.getTime() - 24 * 60 * 60 * 1000,
     ).toISOString()
 
+    console.log('pastTimeHours', pastTimeHours)
+
     const result = await client
-      .api('/me/mailFolders/inbox/messages')
+      .api('/me/messages')
       .select('id')
       .filter(`receivedDateTime ge ${pastTimeHours}`)
       .orderby('receivedDateTime DESC')
@@ -87,7 +91,6 @@ const syncroniceEmailsService = async (emailUser) => {
     await sendSqsService(SQS_NAME, payload)
     return emailIds
   } catch (error) {
-    console.error('Eroor', error)
     throw new Error('Failed to list emails.', error)
   }
 }
@@ -103,14 +106,46 @@ const getEmailByIdService = async (emailUser, messageId) => {
     const email = await client.api(`/me/messages/${messageId}`).get()
     return email
   } catch (error) {
-    console.error('Error retrieving email by ID', error)
     throw new Error(`Failed to retrieve email by ID: ${messageId}`)
+  }
+}
+
+const getAttachmentsFromEmailService = async (emailUser, messageId) => {
+  try {
+    const credentialUser = await credentialsUserEmailAux(emailUser)
+    if (credentialUser == null) {
+      throw new Error('Failed to get credential user.')
+    }
+
+    let accessToken = await persistentTokenUserAux(credentialUser, emailUser)
+
+    const client = await AuthenticatedClientMicrosoftAux(accessToken)
+
+    const attachments = await client
+      .api(`/me/messages/${messageId}/attachments`)
+      .get()
+
+    const fileAttachments = attachments.value.filter(
+      (attachment) =>
+        attachment['@odata.type'] === '#microsoft.graph.fileAttachment',
+    )
+
+    return fileAttachments.map((attachment) => ({
+      name: attachment.name,
+      contentType: attachment.contentType,
+      size: attachment.size,
+      contentBytes: attachment.contentBytes, // El contenido del archivo en base64
+    }))
+  } catch (error) {
+    throw new Error(
+      `Failed to retrieve attachments for message: ${messageId}. Error: ${error.message}`,
+    )
   }
 }
 
 const credentialsUserEmailAux = async (emailUser) => {
   try {
-    const userEmail = await getItemPrimay(
+    const userEmail = await getPrimaryItemService(
       TABLE_EMAIL,
       'TOKEN',
       `MAIL#${emailUser}`,
@@ -156,7 +191,7 @@ const persistentTokenUserAux = async (credential, emailUser) => {
         token_refresh: true,
       }
       const clientTokenEntity = new ClientTokenEntity(result)
-      await putNewItem(TABLE_EMAIL, clientTokenEntity)
+      await createItemService(TABLE_EMAIL, clientTokenEntity)
       access_token = tokenResponse.accessToken
       return access_token
     } catch (error) {
@@ -172,4 +207,5 @@ module.exports = {
   changeCodeByTokenService,
   syncroniceEmailsService,
   getEmailByIdService,
+  getAttachmentsFromEmailService,
 }

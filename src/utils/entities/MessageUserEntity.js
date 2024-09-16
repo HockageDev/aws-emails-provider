@@ -1,14 +1,82 @@
+// module.exports = class MessageUserEntity {
+//   constructor({ id, threadId, labelIds, subject, from, to, date, body }) {
+//     this.PK = 'MESSAGE'
+//     this.SK = `MESSAGE#GMAIL#${id}`
+//     this.id = id
+//     this.threadId = threadId ? threadId : undefined
+//     this.labelIds = labelIds ? labelIds : undefined
+//     this.subject = subject ? subject : undefined
+//     this.from = from
+//     this.to = to ? to : undefined
+//     this.date = date
+//     this.body = body ? body : undefined
+//   }
+// }
+
 module.exports = class MessageUserEntity {
-  constructor({ id, threadId, labelIds, subject, from, to, date, body }) {
+  constructor({
+    id,
+    threadId,
+    labelIds,
+    subject,
+    from,
+    to,
+    date,
+    body,
+    createdDateTime,
+    lastModifiedDateTime,
+    changeKey,
+    categories,
+    receivedDateTime,
+    sentDateTime,
+    hasAttachments,
+    internetMessageId,
+    parentFolderId,
+    conversationId,
+    conversationIndex,
+    isDeliveryReceiptRequested,
+    isReadReceiptRequested,
+    isRead,
+    isDraft,
+    webLink,
+    inferenceClassification,
+    ccRecipients,
+    bccRecipients,
+    replyTo,
+    flag,
+  }) {
     this.PK = 'MESSAGE'
-    this.SK = `MESSAGE#GMAIL#${id}`
+    this.SK = `MESSAGE#MAIL#${id}`
     this.id = id
-    this.threadId = threadId ? threadId : undefined
-    this.labelIds = labelIds ? labelIds : undefined
-    this.subject = subject ? subject : undefined
+    this.threadId = threadId || undefined
+    this.labelIds = labelIds || undefined
+    this.subject = subject || undefined
     this.from = from
-    this.to = to ? to : undefined
-    this.date = date
-    this.body = body ? body : undefined
+    this.to = to || undefined
+    this.date = date || undefined
+    this.body = body || undefined
+
+    // Nuevos campos añadidos
+    this.createdDateTime = createdDateTime || undefined
+    this.lastModifiedDateTime = lastModifiedDateTime || undefined
+    this.changeKey = changeKey || undefined
+    this.categories = categories || undefined
+    this.receivedDateTime = receivedDateTime || undefined
+    this.sentDateTime = sentDateTime || undefined
+    this.hasAttachments = hasAttachments || false
+    this.internetMessageId = internetMessageId || undefined
+    this.parentFolderId = parentFolderId || undefined
+    this.conversationId = conversationId || undefined
+    this.conversationIndex = conversationIndex || undefined
+    this.isDeliveryReceiptRequested = isDeliveryReceiptRequested || null
+    this.isReadReceiptRequested = isReadReceiptRequested || false
+    this.isRead = isRead || false
+    this.isDraft = isDraft || false
+    this.webLink = webLink || undefined
+    this.inferenceClassification = inferenceClassification || 'other'
+    this.ccRecipients = ccRecipients || undefined
+    this.bccRecipients = bccRecipients || undefined
+    this.replyTo = replyTo || undefined
+    this.flag = flag || { flagStatus: 'notFlagged' }
   }
 }

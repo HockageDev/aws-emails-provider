@@ -8,7 +8,6 @@ const handler = async (event) => {
     const message = await syncroniceEmailsService(email)
     return httpResponse.ok(message)
   } catch (error) {
-    console.log('🚀 ~ handler ~ error:', error)
     return httpResponse.serverError()
   }
 }

@@ -2,7 +2,7 @@ const { google } = require('googleapis')
 const OAuth2 = google.auth.OAuth2
 const ClientTokenEntity = require('../utils/entities/ClientTokenEntity')
 const {
-  putNewItem,
+  createItemService,
   getItemPrimay,
   updateItem,
   saveEmailsBatch,
@@ -34,7 +34,7 @@ const changeCodeByToken = async (code) => {
   const userInfo = await getUserInfoService(oauth2Client)
   const emailUser = userInfo.email
   const clientToken = new ClientTokenEntity({ ...tokens, emailUser })
-  await putNewItem(tableNameEmail, clientToken)
+  await createItemService(tableNameEmail, clientToken)
 }
 
 const getUserInfoService = async (auth) => {

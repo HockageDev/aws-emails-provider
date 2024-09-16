@@ -9,6 +9,7 @@ const handler = async (event) => {
       message: 'Token processed and saved successfully',
     })
   } catch (error) {
+    console.log('🚀 ~ handler ~ error:', error)
     return httpResponse.serverError()
   }
 }

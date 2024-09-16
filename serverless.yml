@@ -16,6 +16,7 @@ provider:
     GOOGLE_REDIRECT_URL: ${env:GOOGLE_REDIRECT_URL}
     EMAIL_TABLE_NAME: email-providers
     SQS_QUEUE_NAME: email-queue-${self:provider.stage}
+    S3_BUCKET_NAME: email-providers-${self:provider.stage}
 
 plugins:
   - serverless-dotenv-plugin
@@ -109,8 +110,7 @@ functions:
         Action:
           - dynamodb:GetItem
           - dynamodb:UpdateItem
-          - dynamodb:BatchGetItem
-          - dynamodb:BatchWriteItem
+          - dynamodb:PutItem
         Resource: !GetAtt EmailTable.Arn
       - Effect: 'Allow'
         Action:
@@ -236,6 +236,11 @@ resources:
         QueueName: ${self:provider.environment.SQS_QUEUE_NAME}
         VisibilityTimeout: 60
         MessageRetentionPeriod: 86400
+
+    EmailS3:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:provider.environment.S3_BUCKET_NAME}
 
 package:
   individually: true

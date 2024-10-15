@@ -1,8 +1,4 @@
-const {
-  S3Client,
-  PutObjectCommand,
-  EncodingType,
-} = require('@aws-sdk/client-s3')
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3')
 const client = new S3Client({ region: process.env.REGION })
 
 const uploadAttachmentsS3Service = async (bucketName, attachment, emailId) => {

@@ -1,7 +1,4 @@
-const {
-  getEmailByIdService,
-  getAttachmentsFromEmailService,
-} = require('../../services/microsoftServices')
+const { getEmailByIdService, getAttachmentsFromEmailService } = require('@/')
 const MessageUserEntity = require('../../utils/entities/MessageUserEntity')
 const { createItemService } = require('../../services/dynamoDBServices')
 const {

@@ -16,7 +16,7 @@ const client = new DynamoDBClient({
   region: region,
 })
 
-const createItemService = async (tableName, itemBody) => {
+const createItemTokenService = async (tableName, itemBody) => {
   const params = {
     TableName: tableName,
     Item: marshall(itemBody, {
@@ -27,8 +27,29 @@ const createItemService = async (tableName, itemBody) => {
   try {
     await client.send(new PutItemCommand(params))
   } catch (error) {
-    console.log('🚀 ~ createItemService ~ error:', error)
-    throw new Error('ErrorPutnewItem', error)
+    console.log('ERROR', error)
+    throw new Error('ErrorPutnewItemToken', error)
+  }
+}
+const createItemService = async (tableName, itemBody) => {
+  const params = {
+    TableName: tableName,
+    Item: marshall(itemBody, {
+      convertClassInstanceToMap: true,
+      removeUndefinedValues: true,
+    }),
+    ConditionExpression:
+      'attribute_not_exists(PK) and attribute_not_exists(SK)',
+  }
+  try {
+    await client.send(new PutItemCommand(params))
+  } catch (error) {
+    if (error.name === 'ConditionalCheckFailedException') {
+      console.log(`Message with id ${itemBody.id} already exist in this table`)
+      return
+    }
+    console.error('Error inserting item to DynamoDB:', error)
+    throw new Error(`ErrorPutnewItemMessage: ${error.message}`)
   }
 }
 
@@ -175,6 +196,7 @@ const queryAllItemsService = async (tableName, pk) => {
 
 module.exports = {
   createItemService,
+  createItemTokenService,
   getPrimaryItemService,
   updateItemService,
   addBatchEmailService,

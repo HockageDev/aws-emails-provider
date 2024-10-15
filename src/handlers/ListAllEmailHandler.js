@@ -1,8 +1,11 @@
-const { queryAllItems } = require('../services/dynamoDBServices')
+const { queryAllItemsService } = require('../services/dynamoDBServices')
 const httpResponse = require('../utils/schemas/httpResponse')
 module.exports.handler = async (event) => {
   try {
-    const result = await queryAllItems(process.env.EMAIL_TABLE_NAME, 'MESSAGE')
+    const result = await queryAllItemsService(
+      process.env.EMAIL_TABLE_NAME,
+      'MESSAGE',
+    )
     if (result) {
       return httpResponse.ok(result)
     } else {

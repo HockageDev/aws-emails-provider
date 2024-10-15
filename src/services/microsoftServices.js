@@ -2,8 +2,8 @@ const { ConfidentialClientApplication } = require('@azure/msal-node')
 const { Client } = require('@microsoft/microsoft-graph-client')
 const ClientTokenEntity = require('../utils/entities/ClientTokenEntity')
 const {
-  createItemService,
   getPrimaryItemService,
+  createItemTokenService,
 } = require('./dynamoDBServices')
 const { sendSqsService } = require('./sqsServices')
 
@@ -51,7 +51,7 @@ const changeCodeByTokenService = async (authCode) => {
       token_cache: tokenCache,
     }
     const clientTokenEntity = new ClientTokenEntity(result)
-    await createItemService(TABLE_EMAIL, clientTokenEntity)
+    await createItemTokenService(TABLE_EMAIL, clientTokenEntity)
   } catch (error) {
     throw new Error('Failed to exchange authorization code for tokens.')
   }
@@ -91,6 +91,7 @@ const syncroniceEmailsService = async (emailUser) => {
     await sendSqsService(SQS_NAME, payload)
     return emailIds
   } catch (error) {
+    console.log('🚀 ~ syncroniceEmailsService ~ (error:', error)
     throw new Error('Failed to list emails.', error)
   }
 }
@@ -191,7 +192,7 @@ const persistentTokenUserAux = async (credential, emailUser) => {
         token_refresh: true,
       }
       const clientTokenEntity = new ClientTokenEntity(result)
-      await createItemService(TABLE_EMAIL, clientTokenEntity)
+      await createItemTokenService(TABLE_EMAIL, clientTokenEntity)
       access_token = tokenResponse.accessToken
       return access_token
     } catch (error) {

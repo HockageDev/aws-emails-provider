@@ -18,6 +18,9 @@ provider:
     SQS_QUEUE_NAME: email-queue-${self:provider.stage}
     S3_BUCKET_NAME: email-providers-${self:provider.stage}
 
+custom:
+  sqsArn: !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:email-queue-${self:provider.stage}
+
 plugins:
   - serverless-dotenv-plugin
   - serverless-iam-roles-per-function
@@ -41,7 +44,7 @@ functions:
       - Effect: 'Allow'
         Action:
           - dynamodb:PutItem
-        Resource: !GetAtt EmailTable.Arn
+        Resource: !ImportValue
     events:
       - http:
           path: auth/google/callback
@@ -94,7 +97,8 @@ functions:
       - Effect: 'Allow'
         Action:
           - dynamodb:PutItem
-        Resource: !GetAtt EmailTable.Arn
+        Resource:
+          - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/email-providers
     events:
       - http:
           path: auth/microsoft/callback
@@ -111,7 +115,8 @@ functions:
           - dynamodb:GetItem
           - dynamodb:UpdateItem
           - dynamodb:PutItem
-        Resource: !GetAtt EmailTable.Arn
+        Resource:
+          - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/email-providers
       - Effect: 'Allow'
         Action:
           - sqs:SendMessage
@@ -119,8 +124,8 @@ functions:
           - sqs:DeleteMessage
           - sqs:GetQueueAttributes
           - sqs:GetQueueUrl
-        Resource: !GetAtt EmailQueue.Arn
-
+        Resource:
+          - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:email-queue-${self:provider.stage}
     events:
       - http:
           path: auth/microsoft/sincronice
@@ -136,7 +141,8 @@ functions:
         Action:
           - dynamodb:GetItem
           - dynamodb:PutItem
-        Resource: !GetAtt EmailTable.Arn
+        Resource:
+          - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/email-providers
       - Effect: 'Allow'
         Action:
           - s3:PutObject
@@ -149,7 +155,8 @@ functions:
           - sqs:DeleteMessage
           - sqs:GetQueueAttributes
           - sqs:GetQueueUrl
-        Resource: !GetAtt EmailQueue.Arn
+        Resource:
+          - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:email-queue-${self:provider.stage}
     events:
       - sqs:
           arn: !GetAtt EmailQueue.Arn

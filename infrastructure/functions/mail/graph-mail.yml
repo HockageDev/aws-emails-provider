@@ -1,0 +1,83 @@
+authUrlMicrosoft:
+  handler: dist/handlers/microsoft/authUrlMicrosodtEmailHandler.handler
+  events:
+    - http:
+        path: auth/microsoft
+        method: get
+  package:
+    patterns:
+      - dist/handlers/microsoft/authUrlMicrosodtEmailHandler.js
+
+callbackMicrosoft:
+  handler: dist/handlers/microsoft/callbackCodeMicrosoftHandler.handler
+  iamRoleStatements:
+    - Effect: 'Allow'
+      Action:
+        - dynamodb:PutItem
+      Resource:
+        - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/email-providers
+  events:
+    - http:
+        path: auth/microsoft/callback
+        method: get
+  package:
+    patterns:
+      - dist/handlers/microsoft/callbackCodeMicrosoftHandler.js
+
+sendIdEmailQueueMicrosof:
+  handler: dist/handlers/microsoft/sendIdEmailQueueMicrosoftHandler.handler
+  iamRoleStatements:
+    - Effect: 'Allow'
+      Action:
+        - dynamodb:GetItem
+        - dynamodb:UpdateItem
+        - dynamodb:PutItem
+      Resource:
+        - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/email-providers
+    - Effect: 'Allow'
+      Action:
+        - sqs:SendMessage
+        - sqs:ReceiveMessage
+        - sqs:DeleteMessage
+        - sqs:GetQueueAttributes
+        - sqs:GetQueueUrl
+      Resource:
+        - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:email-queue-${self:provider.stage}
+  events:
+    - http:
+        path: auth/microsoft/sincronice
+        method: post
+  package:
+    patterns:
+      - dist/handlers/microsoft/sendIdEmailQueueMicrosoftHandler.js
+
+syncroniceEmailsMicrosoft:
+  handler: dist/handlers/microsoft/syncroniceEmailsHandler.handler
+  iamRoleStatements:
+    - Effect: 'Allow'
+      Action:
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+      Resource:
+        - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/email-providers
+    - Effect: 'Allow'
+      Action:
+        - s3:PutObject
+        - s3:GetObject
+      Resource: !Sub 'arn:aws:s3:::${self:provider.environment.S3_BUCKET_NAME}/*'
+    - Effect: 'Allow'
+      Action:
+        - sqs:SendMessage
+        - sqs:ReceiveMessage
+        - sqs:DeleteMessage
+        - sqs:GetQueueAttributes
+        - sqs:GetQueueUrl
+      Resource:
+        - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:email-queue-${self:provider.stage}
+  events:
+    - sqs:
+        arn: !GetAtt EmailQueue.Arn
+        batchSize: 10
+  package:
+    patterns:
+      - dist/handlers/microsoft/syncroniceEmailsHandler.js

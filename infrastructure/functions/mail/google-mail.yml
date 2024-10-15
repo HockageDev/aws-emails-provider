@@ -1,0 +1,50 @@
+authUrlGoogle:
+  handler: dist/handlers/google/authUrlGoogleEmailHandler.handler
+  events:
+    - http:
+        path: auth/google
+        method: get
+  package:
+    patterns:
+      - dist/handlers/google/authUrlGoogleEmailHandler.js
+
+callbackGoogle:
+  handler: dist/handlers/google/callbackCodeGoogleHandler.handler
+  iamRoleStatements:
+    - Effect: 'Allow'
+      Action:
+        - dynamodb:PutItem
+      Resource: !ImportValue
+  events:
+    - http:
+        path: auth/google/callback
+        method: get
+  package:
+    patterns:
+      - dist/handlers/google/callbackCodeGoogleHandler.js
+
+listEmailsGoogle:
+  handler: dist/handlers/google/listEmailGoogleHandler.handler
+  iamRoleStatements:
+    - Effect: 'Allow'
+      Action:
+        - dynamodb:GetItem
+        - dynamodb:UpdateItem
+        - dynamodb:BatchGetItem
+        - dynamodb:BatchWriteItem
+      Resource: !GetAtt EmailTable.Arn
+    - Effect: 'Allow'
+      Action:
+        - sqs:SendMessage
+        - sqs:ReceiveMessage
+        - sqs:DeleteMessage
+        - sqs:GetQueueAttributes
+        - sqs:GetQueueUrl
+      Resource: !GetAtt EmailQueue.Arn
+  events:
+    - http:
+        path: auth/google/list-mails
+        method: post
+  package:
+    patterns:
+      - dist/handlers/google/listEmailGoogleHandler.js
